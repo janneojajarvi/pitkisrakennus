@@ -103,7 +103,7 @@
 
   <div class="row">
     <div class="form-group">
-      <label for="fippleLength">Fiopl/Labium Head / Puhalluspää (mm):</label>
+      <label for="fippleLength">Fipple Head / Puhalluspää (mm):</label>
       <input type="number" id="fippleLength" value="63" step="1" oninput="calculateLength()">
     </div>
 
@@ -114,11 +114,12 @@
   </div>
 
   <div class="result" id="output">
-    </div>
+    <!-- Dynamic output -->
+  </div>
 
   <p class="note">
     * Inner diameter / Sisähalkaisija: <span id="innerDiamText">16.2</span> mm.<br>
-    * Acoustic length formula / Akustinen pituus: $L = \frac{v}{2f} - 0.65 \times d$.
+    * Calibrated end correction / Kalibroitu päätekorjaus: $L_{\text{acoustic}} = \frac{v}{2f} - 1.5 \times d$.
   </p>
 </div>
 
@@ -134,14 +135,16 @@
     const innerDiameterMm = Math.max(0, outerDiameter - (2 * wallThickness));
     document.getElementById('innerDiamText').innerText = innerDiameterMm.toFixed(1);
 
-    const speedOfSound = 343; // m/s at ~20°C
+    // Adjusted acoustic speed of sound for playing conditions (~338 m/s)
+    const speedOfSound = 338; 
     
-    // Length from sound hole (labium) to open end (mm)
+    // Length from labium window to open end
     const acousticLengthM = speedOfSound / (2 * freq);
-    const endCorrectionM = (0.65 * innerDiameterMm) / 1000;
+    // Empirical end correction factor (1.5 * inner diameter) for fipple + open end combined
+    const endCorrectionM = (1.5 * innerDiameterMm) / 1000;
     const windowToEndMm = Math.round((acousticLengthM - endCorrectionM) * 1000);
 
-    // Total finished flute length (fipple head + window to end)
+    // Total finished flute length
     const totalFinishedLengthMm = windowToEndMm + fippleHeadMm;
     const initialCutLengthMm = totalFinishedLengthMm + marginMm;
 
