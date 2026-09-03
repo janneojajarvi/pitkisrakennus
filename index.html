@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fi">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pitkähuilun pituuslaskuri</title>
+  <title>Willow Flute / Koncovka Pipe Length Calculator</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -11,12 +11,17 @@
       margin: 40px auto;
       padding: 20px;
       background-color: #f4f4f9;
+      color: #333;
     }
     .card {
       background: white;
       padding: 25px;
       border-radius: 8px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h2 {
+      margin-top: 0;
+      color: #2c3e50;
     }
     .form-group {
       margin-bottom: 15px;
@@ -32,6 +37,14 @@
       box-sizing: border-box;
       border: 1px solid #ccc;
       border-radius: 4px;
+      font-size: 14px;
+    }
+    .row {
+      display: flex;
+      gap: 10px;
+    }
+    .row .form-group {
+      flex: 1;
     }
     .result {
       margin-top: 20px;
@@ -42,71 +55,97 @@
     }
     .result p {
       margin: 5px 0;
+      font-size: 15px;
+    }
+    .note {
+      font-size: 12px;
+      color: #666;
+      margin-top: 15px;
     }
   </style>
 </head>
 <body>
 
 <div class="card">
-  <h2>Pitkähuilun mitoituslaskuri</h2>
+  <h2>Willow Flute Pipe Calculator</h2>
+  <p>Calculate the required pipe length based on root key and pipe dimensions.</p>
   
   <div class="form-group">
-    <label for="note">Valitse pohjasävel:</label>
+    <label for="note">Select Root Pitch:</label>
     <select id="note" onchange="calculateLength()">
-      <option value="261.63">C1 (261.63 Hz)</option>
-      <option value="277.18">C#1 / Db1 (277.18 Hz)</option>
-      <option value="293.66" selected>D1 (293.66 Hz)</option>
-      <option value="311.13">D#1 / Eb1 (311.13 Hz)</option>
-      <option value="329.63">E1 (329.63 Hz)</option>
-      <option value="349.23">F1 (349.23 Hz)</option>
-      <option value="369.99">F#1 / Gb1 (369.99 Hz)</option>
-      <option value="392.00">G1 (392.00 Hz)</option>
-      <option value="415.30">G#1 / Ab1 (415.30 Hz)</option>
-      <option value="440.00">A1 (440.00 Hz)</option>
+      <option value="261.63">C3 / C1 (261.63 Hz)</option>
+      <option value="277.18">C#3 / Db3 (277.18 Hz)</option>
+      <option value="293.66" selected>D3 / D1 (293.66 Hz)</option>
+      <option value="311.13">D#3 / Eb3 (311.13 Hz)</option>
+      <option value="329.63">E3 / E1 (329.63 Hz)</option>
+      <option value="349.23">F3 / F1 (349.23 Hz)</option>
+      <option value="369.99">F#3 / Gb3 (369.99 Hz)</option>
+      <option value="392.00">G3 / G1 (392.00 Hz)</option>
+      <option value="415.30">G#3 / Ab3 (415.30 Hz)</option>
+      <option value="440.00">A3 / A1 (440.00 Hz)</option>
     </select>
   </div>
 
-  <div class="form-group">
-    <label for="diameter">Putken sisähalkaisija (mm):</label>
-    <input type="number" id="diameter" value="16.2" step="0.1" oninput="calculateLength()">
+  <div class="row">
+    <div class="form-group">
+      <label for="outerDiameter">Outer Diameter (mm):</label>
+      <input type="number" id="outerDiameter" value="20" step="0.1" oninput="calculateLength()">
+    </div>
+
+    <div class="form-group">
+      <label for="wallThickness">Wall Thickness (mm):</label>
+      <input type="number" id="wallThickness" value="1.5" step="0.1" oninput="calculateLength()">
+    </div>
   </div>
 
   <div class="form-group">
-    <label for="margin">Viritysvara katkaisuun (mm):</label>
+    <label for="margin">Tuning Margin for Initial Cut (mm):</label>
     <input type="number" id="margin" value="30" step="1" oninput="calculateLength()">
   </div>
 
   <div class="result" id="output">
-    <!-- Tulokset lasketaan tähän -->
+    <!-- Results generated dynamically -->
   </div>
+
+  <p class="note">
+    * Inner diameter is calculated as: Outer Diameter − (2 × Wall Thickness) = <span id="innerDiamText">17.0</span> mm.<br>
+    * End correction calculation applies $L_{\text{physical}} = \frac{v}{2f} - 0.65 \times d$.
+  </p>
 </div>
 
 <script>
   function calculateLength() {
     const freq = parseFloat(document.getElementById('note').value);
-    const innerDiameterMm = parseFloat(document.getElementById('diameter').value) || 0;
+    const outerDiameter = parseFloat(document.getElementById('outerDiameter').value) || 0;
+    const wallThickness = parseFloat(document.getElementById('wallThickness').value) || 0;
     const marginMm = parseFloat(document.getElementById('margin').value) || 0;
     
-    const speedOfSound = 343; // m/s (n. 20°C lämpötilassa)
+    // Calculate inner diameter
+    const innerDiameterMm = Math.max(0, outerDiameter - (2 * wallThickness));
+    document.getElementById('innerDiamText').innerText = innerDiameterMm.toFixed(1);
+
+    const speedOfSound = 343; // m/s at ~20°C
     
-    // Akustinen pituus metreinä
+    // Acoustic length in meters (half wavelength for open pipe)
     const acousticLengthM = speedOfSound / (2 * freq);
     
-    // Päätekorjaus (end correction) kahdelle avoimelle päälle / labiumille ~ 0.65 * sisähalkaisija
+    // End correction for open pipe + labium (~0.65 * inner diameter)
     const endCorrectionM = (0.65 * innerDiameterMm) / 1000;
     
-    // Valmis huilun mitta labiumista puimurin päähän + tulpan osuus
+    // Final finished length from labium window to open end
     const finalLengthMm = Math.round((acousticLengthM - endCorrectionM) * 1000);
     const initialCutLengthMm = finalLengthMm + marginMm;
 
     document.getElementById('output').innerHTML = `
-      <p><strong>Valmiin huilun pituus:</strong> n. ${finalLengthMm} mm</p>
-      <p><strong>Katkaisupituus (sis. viritysvaran):</strong> n. ${initialCutLengthMm} mm</p>
-      <p><em>Säädä valmista pituutta tarvittaessa hiomalla tai leikkaamalla testipuhallusten jälkeen.</em></p>
+      <p><strong>Finished Flute Length:</strong> approx. <strong>${finalLengthMm} mm</strong></p>
+      <p><strong>Initial Cut Length (incl. tuning margin):</strong> approx. <strong>${initialCutLengthMm} mm</strong></p>
+      <p style="font-size: 13px; color: #555; margin-top: 8px;">
+        <em>Always cut longer first and fine-tune by shortening/sanding the end after testing the pitch.</em>
+      </p>
     `;
   }
 
-  // Suoritetaan laskenta sivun latautuessa
+  // Initial calculation on page load
   calculateLength();
 </script>
 
